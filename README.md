@@ -1,7 +1,7 @@
 # FAPP
 > **F**lags **A**nd **P**ositional **P**arameters
 
-**fapp** is a convention of how pass command line arguments to functions.
+**fapp** is a convention of how pass command line arguments to functions, it uses `std/flags` under the hood for the parsing part.
 
 The pattern is: 
 - A plein Array
@@ -39,18 +39,45 @@ Or destructured/reorganised to use it right now:
 - Javascript rest parameter ( aka `...varname` ) must be last argument,
 so a command that can act on 1 or more targets are likely to use a rest parameter.
 - Options object to be destructured is a usal pattern.
+- `std/flags` is good enough, but introduce an object format that is relative to this module only (especially the `"_"` key).
+
+- It's easier to add some key/value pairs to an `Object` literal than deleting some:
+
+```javascript
+import { parse } from 'std/flags/mod.ts'
+const params = parse( Deno.args )
+// ...
+const foo = ()=> {
+	const myOptions = { ...params, urls: params._ }
+	delete myOptions._
+	//> To get a { flag: true, foo: 'bar', urls: [...] }
+	return other( myOptions )
+}
+
+// Than
+
+import ARGV from 'x/fapp/mod.ts'
+// ...
+const foo = ()=> {
+	return other({ ...ARGV[0], urls: ARGV.slice(1) })
+	//> To get a { flag: true, foo: 'bar', urls: [...] }
+}
+
+// But, easy also to get back a 'std/flags format'
+const flagsFormat = { ...ARGV[0], _: ARGV.slice(1) }
+```
 
 ## Usages
 
 ### Deno
-Imports the named export `{ fapp }` that is the parsing function:
+Import the named export `{ fapp }` that is the parsing function:
 ```javascript
 import { fapp } from 'x/fapp/mod.ts'
 
 if( itShouldExecuteCommands )
 	myCommand( ...fapp(ARGV) )
 ```
-Or imports the default's value that is the `Deno.args` already parsed:
+Or import the default's value that is the `Deno.args` already parsed:
 ```javascript
 import fapp from 'x/fapp/mod.ts'
 const [ flags, ...params ] = fapp
@@ -84,7 +111,7 @@ import.meta.main
 Here, `fapp` module is always loaded, and `Deno.args` always parsed.
 
 If you want to avoid that to mix a standart libray module that only exports things to be imported and an executable file, you can dynamcaly import only 
-if this scrit is the main module:
+if this script is the main module:
 
 
 ```javascript
